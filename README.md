@@ -1,8 +1,8 @@
 # gkScraper
-gkScraper is a web scraper written in VB.NET.
+gkScraper is a web scraping library for .NET Framework written in VB.NET.
 
-It can navigate programmatically on web site looking for link and information and collecting them.
-Data are located using XPath syntax and extracted as node o text.
+It can navigate programmatically on web sites looking for links and information and collecting them.
+Data are located using XPath syntax and extracted as node, HTML or text.
 
 <b>Navigation features include:</b>
 <ul>
