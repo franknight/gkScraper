@@ -39,9 +39,12 @@ It scrapes products data from a demo e-commerce site and write results to a XML 
 Products are visible only to logged users.<br>
 The Test Project firstly securely log in and after collect data from the first page of displayed products.</p>
 
-<b>Note</b>: The library contains an helper class to insert data into a MS Access Database.
-In order to use MS Access features you need to install the Microsoft.ACE.OLEDB.16.0 provider distributed with MS Access o Runtime library.
-If you don't want make use of this features you can comment lines without affecting the scraping.
+<b>Note</b>: <br>
+<p>The library contains an helper class to insert data into a MS Access Database.<br>
+In order to use MS Access features you need to install the Microsoft.ACE.OLEDB.16.0 provider distributed with MS Access o Runtime library. Be sure to target the right platform x86 or x64 according to the runtime installed.<br>
+If you don't want make use of this features you can comment lines without affecting the scraping.<br>
+
+</p>
 
 
 
