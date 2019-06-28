@@ -403,10 +403,30 @@ Public Class gkParser
 
         'Manage redirection
         If status > 300 And status < 400 Then
-            responseFromServer = Navigate(new_location) 'GetData("GET", new_location, "", p_Cookies)
-        End If
 
-        text = responseFromServer
+            Dim tmp As Uri = Nothing
+            Dim scheme As String
+            Dim domain As String
+
+            If Uri.TryCreate(new_location, UriKind.RelativeOrAbsolute, tmp) Then
+                If Not tmp.IsAbsoluteUri Then
+                    scheme = response.ResponseUri.Scheme
+                    domain = response.ResponseUri.Host
+                    If Not new_location.StartsWith("/") Then
+                        new_location = "/" & new_location
+                    End If
+                    tmp = New Uri(scheme & "://" & domain & new_location)
+                End If
+
+                'OrElse Not Uri.TryCreate(response.ResponseUri.Scheme & "://" & response.ResponseUri.IdnHost & new_location, UriKind.Absolute, tmp) Then
+            Else
+                Throw New Exception("Redirection URI was not understood.")
+            End If
+
+            responseFromServer = Navigate(tmp.ToString) 'GetData("GET", new_location, "", p_Cookies)
+            End If
+
+            text = responseFromServer
 
 
         If Me.p_contentType = "application/json" Then

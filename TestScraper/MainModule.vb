@@ -1,19 +1,15 @@
-﻿'Imports mshtml
-Imports System.Xml
-Imports System.IO
-Imports System.Data
-Imports Gekoproject
+﻿Imports System.Xml
+Imports Gekoproject.gkScraper
 
 Module MainModule
 
     Dim db As DBAccessHelper
-
     Dim bot As gkScrapeBot
 
     Sub Main()
 
         db = New DBAccessHelper
-        db.ConnectDatabase("Provider=Microsoft.Jet.OLEDB.4.0;Data source=.\ScrapeDB.mdb;")
+        db.ConnectDatabase("Provider = Microsoft.ACE.OLEDB.16.0;Data Source=.\ScrapeDB.mdb;Persist Security Info=False;")
 
         If bot Is Nothing Then
             bot = New gkScrapeBot
@@ -24,16 +20,8 @@ Module MainModule
 
         bot.GlobalWaitTime = 1000
 
-        Try
-            'TestPostJson()
-            Scrape()
+        Scrape()
 
-        Catch ex As Exception
-            Console.WriteLine(ex.Message)
-
-        End Try
-
-        Console.ReadLine()
     End Sub
 
     Private Sub Scrape()
@@ -60,7 +48,7 @@ Module MainModule
         Const PASS = "test"
 
         'Navigate to homepage and get cookies. 
-        url = "http://testscrape.gekoproject.com/index.php/author-login"
+        url = "https://testscrape.gekoproject.com/index.php/author-login"
         bot.Navigate(url)
 
         'Then look for two parameters useful to login
@@ -68,7 +56,7 @@ Module MainModule
         token2 = bot.GetText_byXpath("//DIV[@class='login']//INPUT[@type='hidden'][2]", , "name")
 
         'Now login with username e pssword
-        url = "http://testscrape.gekoproject.com/index.php/log-out?task=user.login/"
+        url = "https://testscrape.gekoproject.com/index.php/author-login?task=user.login"
         data = "username=" & USER & "&password=" & PASS & "&return=" & token1 & "&" & token2 & "=1"
         bot.Post(url, data)
         mytext = bot.GetText_byXpath("//DT[contains(.,'Registered Date')]/following-sibling::DD[1]")
@@ -85,53 +73,65 @@ Module MainModule
         Dim desc As String
         Dim price_str As String
         Dim price As Double
+        Dim img_path As String
 
         'Get products details
-        url = "http://testscrape.gekoproject.com/index.php/shop/categories"
+        url = "https://testscrape.gekoproject.com/index.php/front-end-store"
         bot.Navigate(url)
 
         Dim ns As XmlNodeList = bot.GetNodes_byXpath("//DIV[@class='row']//DIV[contains(@class, 'product ')]")
-        For Each n As XmlNode In ns
-            name = bot.GetText_byXpath(".//DIV[@class='vm-product-descr-container-1']/H2", n)
-            desc = bot.GetText_byXpath(".//DIV[@class='vm-product-descr-container-1']/P", n)
-            desc = gkScrapeBot.FriendLeft(desc, 50)
+        If ns.Count > 0 Then
 
-            price_str = bot.GetText_byXpath(".//DIV[contains(@class,'PricesalesPrice')]", n)
-            If price_str <> "" Then
-                price = gkScrapeBot.GetNumberPart(price_str, ",")
-            End If
+            Dim writer As XmlWriter = Nothing
 
-            'Insert data into DB
-            db.CommantType = DBCommandTypes.INSERT
-            db.Table = "Articles"
-            db.Fields("Name") = name
-            db.Fields("Description") = desc
-            db.Fields("Price") = price
-            Dim ra As Integer = db.Execute()
-            If ra = 1 Then
-                Console.WriteLine("Inserted new article: {0}", name)
-            End If
+            ' Create an XmlWriterSettings object with the correct options. 
+            Dim settings As XmlWriterSettings = New XmlWriterSettings()
+                settings.Indent = True
+                settings.IndentChars = (ControlChars.Tab)
+                settings.OmitXmlDeclaration = True
 
-        Next
+            writer = XmlWriter.Create("data.xml", settings)
+            writer.WriteStartElement("products")
 
+            For Each n As XmlNode In ns
+                name = bot.GetText_byXpath(".//DIV[@class='vm-product-descr-container-1']/H2", n)
+                desc = bot.GetText_byXpath(".//DIV[@class='vm-product-descr-container-1']/P", n)
+                desc = gkScrapeBot.FriendLeft(desc, 50)
+                img_path = bot.GetText_byXpath(".//DIV[@class='vm-product-media-container']//IMG", n, "src")
+                price_str = bot.GetText_byXpath(".//DIV[contains(@class,'PricesalesPrice')]", n)
+                If price_str <> "" Then
+                    price = gkScrapeBot.GetNumberPart(price_str, ",")
+                End If
+
+                writer.WriteStartElement("product")
+
+                writer.WriteElementString("name", name)
+                writer.WriteElementString("description", desc)
+                writer.WriteElementString("price", price)
+                writer.WriteElementString("image", img_path)
+
+                writer.WriteEndElement()
+
+                'Insert data into DB
+                db.CommantType = DBCommandTypes.INSERT
+                db.Table = "Articles"
+                db.Fields("Name") = name
+                db.Fields("Description") = desc
+                db.Fields("Price") = price
+                Dim ra As Integer = db.Execute()
+                If ra = 1 Then
+                    Console.WriteLine("Inserted new article: {0}", name)
+                End If
+
+            Next
+
+            writer.WriteEndElement()
+            writer.Flush()
+            writer.Close()
+
+        End If
 
     End Function
 
-    Public Sub TestPostJson()
-
-        Dim url As String
-        Dim data As String
-        Dim title As String
-        Dim start As String
-
-        url = "http://www.teatrodue.org/wp-admin/admin-ajax.php/"
-        data = "action=get_events&readonly=true&categories=0&excluded=0&start=1424646000&end=1428271200"
-        bot.Post(url, data)
-
-        title = bot.GetValue_byXpath("//item[@type='object'][id='921']/title")
-        start = bot.GetValue_byXpath("//item[@type='object'][id='921']/start")
-        Console.WriteLine("Titolo {0}, Inizio: {1}", title, start)
-
-    End Sub
 
 End Module

@@ -24,6 +24,7 @@ Public Class gkScrapeBot
         conf = NLog.LogManager.Configuration
         If conf Is Nothing Then
             conf = New LoggingConfiguration
+            NLog.LogManager.Configuration = conf
         End If
         'LogManager.Configuration = conf
         conf.AddTarget("gkscraper_log_file", New Targets.FileTarget With {.FileName = "gkscraper.log"})
